@@ -1,0 +1,294 @@
+Step 1 : Child pom me packaging ke neeche
+<parent>
+  	<groupId>ParentPOM</groupId>
+	<artifactId>ParentPOM</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<relativePath>../ParentPOM/pom.xml</relativePath> (I missed this)
+</parent>
+
+Step 2: In Parent pom add pakagaing as pom
+<packaging>pom</packaging>
+
+Step 3: in pom.xml of parent, in dependency add 2 plugins, surefire report plugin and checkstype report (report word likhoooo)
+
+<dependency>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-report-plugin</artifactId> (I missed this)
+    <version>3.0.0-M7</version>
+</dependency>
+
+<dependency>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-checkstyle-plugin</artifactId>
+    <version>3.2.0</version>
+</dependency>
+
+
+==============
+Parent pom.xml
+==============
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>ParentPOM</groupId>
+	<artifactId>ParentPOM</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+	<name>ParentPOM</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-report-plugin</artifactId>
+            <version>3.0.0-M7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>3.2.0</version>
+        </dependency>
+    </dependencies>
+</project>
+
+
+
+=============
+Child pom.xml
+=============
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>ChildPOM</groupId>
+	<artifactId>ChildPOM</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+<parent>
+  	<groupId>ParentPOM</groupId>
+	<artifactId>ParentPOM</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+    	<relativePath>../ParentPOM/pom.xml</relativePath>
+</parent>
+
+	<name>ChildPOM</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
+
+
+
+======
+run.sh
+======
+
+#!/bin/sh/
+cd ChildPOM; mvn clean install test checkstyle:checkstyle | tee .output.txt
+
+========
+score.sh
+========
+
+#!/bin/sh
+pass=0
+fail=0
+TEST_1=$(find ChildPOM/target/surefire-reports/*.xml | wc -l)
+TEST_2=$(find ChildPOM/target/checkstyle-result.xml | wc -l)
+TEST_3=$(find ChildPOM/target/checkstyle-checker.xml | wc -l)
+TEST_4=$(grep -io -e "<parent>" -e "<groupId>ParentPOM</groupId>" -e "<relativePath>../ParentPOM/pom.xml</relativePath>" ChildPOM/pom.xml | wc -l)
+TEST_5=$(grep -io -e "Tests run: 1" -e "Failures: 0" -e "Errors: 0" -e "BUILD SUCCESS" ChildPOM/.output.txt | wc -l)
+TEST_6=$(grep -io -e "maven-surefire-report-plugin" -e "maven-checkstyle-plugin" ParentPOM/pom.xml | wc -l)
+if [ "$TEST_1" -eq 1 ]
+then ((pass++))
+else
+    ((fail++))
+fi;
+if [ "$TEST_2" -eq 1 ]
+then ((pass++))
+else
+    ((fail++))
+fi;
+if [ "$TEST_3" -eq 1 ]
+then ((pass++))
+else
+    ((fail++))
+fi;
+if [ "$TEST_4" -ge 3 ]
+then ((pass++))
+else
+    ((fail++))
+fi;
+if [ "$TEST_5" -ge 7 ]
+then ((pass++))
+else
+    ((fail++))
+fi;
+if [ "$TEST_6" -ge 2 ]
+then ((pass++))
+else
+    ((fail++))
+fi;
+echo "Total testcase: 6"
+echo "Total testcase passed: $pass"
+echo "Total testcase fail: $fail"
+echo "total score: $(( ($pass * 100) / 6))"
+
+==========
+output.txt
+==========
+
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building ChildPOM 0.0.1-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ ChildPOM ---
+[INFO] Deleting /projects/challenge/ChildPOM/target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ ChildPOM ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /projects/challenge/ChildPOM/src/main/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:compile (default-compile) @ ChildPOM ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 1 source file to /projects/challenge/ChildPOM/target/classes
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ ChildPOM ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /projects/challenge/ChildPOM/src/test/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:testCompile (default-testCompile) @ ChildPOM ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 1 source file to /projects/challenge/ChildPOM/target/test-classes
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.12.4:test (default-test) @ ChildPOM ---
+[INFO] Surefire report directory: /projects/challenge/ChildPOM/target/surefire-reports
+
+
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Running ChildPOM.ChildPOM.AppTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 sec
+
+Results :
+
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+
+[INFO] 
+[INFO] --- maven-jar-plugin:2.4:jar (default-jar) @ ChildPOM ---
+[INFO] Building jar: /projects/challenge/ChildPOM/target/ChildPOM-0.0.1-SNAPSHOT.jar
+[INFO] 
+[INFO] --- maven-install-plugin:2.4:install (default-install) @ ChildPOM ---
+[INFO] Installing /projects/challenge/ChildPOM/target/ChildPOM-0.0.1-SNAPSHOT.jar to /home/user/.m2/repository/ChildPOM/ChildPOM/0.0.1-SNAPSHOT/ChildPOM-0.0.1-SNAPSHOT.jar
+[INFO] Installing /projects/challenge/ChildPOM/pom.xml to /home/user/.m2/repository/ChildPOM/ChildPOM/0.0.1-SNAPSHOT/ChildPOM-0.0.1-SNAPSHOT.pom
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ ChildPOM ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /projects/challenge/ChildPOM/src/main/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:compile (default-compile) @ ChildPOM ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ ChildPOM ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /projects/challenge/ChildPOM/src/test/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:testCompile (default-testCompile) @ ChildPOM ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.12.4:test (default-test) @ ChildPOM ---
+[INFO] Skipping execution of surefire because it has already been run for this configuration
+[INFO] 
+[INFO] --- maven-checkstyle-plugin:3.2.0:checkstyle (default-cli) @ ChildPOM ---
+[INFO] Rendering content with org.apache.maven.skins:maven-default-skin:jar:1.3 skin.
+[INFO] There are 12 errors reported by Checkstyle 9.3 with sun_checks.xml ruleset.
+[WARNING] Unable to locate Source XRef to link to - DISABLED
+[WARNING] Unable to locate Test Source XRef to link to - DISABLED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 9.048 s
+[INFO] Finished at: 2022-11-08T08:24:56+00:00
+[INFO] Final Memory: 47M/782M
+[INFO] ------------------------------------------------------------------------
+
+
+================
+parent java code
+================
+
+Location: ParentPOM/src/main/java/ParentPOM/ParentPOM/App.java
+
+package ParentPOM.ParentPOM;
+
+/**
+ * Hello world!
+ *
+ */
+public class App 
+{
+    public static void main( String[] args )
+    {
+        System.out.println( "Hello World!" );
+    }
+}
+
+
+===============
+child java code
+===============
+
+Location: ChildPOM/src/main/java/ChildPOM/ChildPOM/App.java
+
+
+package ChildPOM.ChildPOM;
+
+/**
+ * Hello world!
+ *
+ */
+public class App 
+{
+    public static void main( String[] args )
+    {
+        System.out.println( "Hello World!" );
+    }
+}
+
+install.sh
+
+#!/bin/sh
+sudo apt update;
+sudo apt install maven -y;
+mvn clean;    
+
+
+
